@@ -9,4 +9,81 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(tidyverse)
+library(keras)
+library(caret)
+
+theme_set(theme_minimal())
+
+set.seed(123)
+```
+
+```{r}
+# Load the data & clean the data
+bitcoin_data <- read.csv("data/BCHAIN-MKPRU.csv") %>% 
+  mutate(Date = as.Date(Date, "%m/%d/%y")) %>% 
+  na.omit()
+
+gold_data <- read.csv("data/LBMA-GOLD.csv") %>% 
+  mutate(Date = as.Date(Date, "%m/%d/%y")) %>% 
+  na.omit()
+```
+
+```{r}
+# Visualize data
+bitcoin_data %>% 
+  ggplot(aes(x = Date,
+             y = Value)) +
+  geom_line()
+
+gold_data %>% 
+  ggplot(aes(x = Date,
+             y = USD..PM.)) +
+  geom_line()
+```
+
+```{r}
+max_len <- 7
+batch_size <- 32
+total_epochs <- 15
+
+bitcoin_price <- bitcoin_data$Value
+```
+
+```{r}
+start_indexes <- seq(1, length(bitcoin_price) - (max_len + 1), by = 3)
+
+bitcoin_matrix <- matrix(nrow = length(start_indexes), ncol = max_len + 1)
+
+for (i in 1:length(start_indexes)) {
+  bitcoin_matrix[i,] <- bitcoin_price[start_indexes[i]:(start_indexes[i] + max_len)]
+}
+```
+
+```{r}
+x <- bitcoin_matrix[,-ncol(bitcoin_matrix)]
+y <- bitcoin_matrix[,ncol(bitcoin_matrix)]
+```
+
+```{r}
+training_index <- createDataPartition(y, p = 0.9,
+                                      list = FALSE,
+                                      times = 1)
+x_train <- array(x[training_index,], dim = c(length(training_index), max_len, 1))
+y_train <- y[training_index]
+
+x_test <- array(x[-training_index,], dim = c(length(training_index), max_len, 1))
+y_test <- y[-training_index]
+```
+
+```{r}
+model <- keras_model_sequential()
+```
+
+```{r}
+dim(x_train)
+```
+
+
 
