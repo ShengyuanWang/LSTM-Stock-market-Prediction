@@ -195,7 +195,7 @@ gold_result <- gold_data %>%
 
 gold_result
 
-write.csv(gold_result, "prediction/gold_LSTM_result.csv")
+write.csv(gold_result, "prediction/gold_LSTM_result_modified.csv")
 ```
 
 ```{r}
