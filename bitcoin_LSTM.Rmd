@@ -141,8 +141,13 @@ ggplot(data = df) +
 ```
 
 ```{r}
+# Save the model
+#model %>% save_model_tf("model")
+```
+
+```{r}
 df %>% 
-  mutate(index = ifelse(type %in% c("test", "train"), index - 1, index)) %>% 
+  mutate(index = ifelse(type %in% c("test", "train"), index - 1, index)) %>%
   filter(index >= 1500,
          index <= 1550) %>% 
   ggplot(aes(x = index,
@@ -177,7 +182,8 @@ result <- df %>%
 
 bitcoin_result <- bitcoin_data %>% 
   cbind(result) %>% 
-  select(Date, value)
+  select(Date, value) %>% 
+  filter(value != 0)
 
 bitcoin_result
 
@@ -207,7 +213,8 @@ result <- df %>%
 
 bitcoin_result <- bitcoin_data %>% 
   cbind(result) %>% 
-  select(Date, value)
+  select(Date, value) %>% 
+  filter(value != 0)
 
 bitcoin_result
 
