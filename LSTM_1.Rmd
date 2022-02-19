@@ -97,7 +97,7 @@ invert_scaling = function(scaled, scaler, feature_range = c(0, 1)){
   maxs = feature_range[2]
   inverted_dfs = numeric(t)
   
-  for( i in 1:t){
+  for(i in 1:t){
     X = (scaled[i]- mins)/(maxs - mins)
     rawValues = X *(max - min) + min
     inverted_dfs[i] <- rawValues
@@ -114,11 +114,11 @@ dim(x_train) <- c(length(x_train), 1, 1)
 X_shape2 = dim(x_train)[2]
 X_shape3 = dim(x_train)[3]
 batch_size = 146 # must be a common factor of both the train and test samples
-units = 60 # can adjust this, in model tuning phase
+units = 6 # can adjust this, in model tuning phase
 
 model <- keras_model_sequential() 
 model%>%
-  layer_lstm(units, batch_input_shape = c(batch_size, X_shape2, X_shape3), stateful= TRUE)%>%
+  layer_lstm(units = 3, batch_input_shape = c(batch_size, X_shape2, X_shape3), stateful= TRUE)%>%
   layer_dense(units = 1)
 ```
 
@@ -134,10 +134,7 @@ summary(model)
 
 ```{r}
 Epochs = 15
-#for(i in 1:Epochs ){
-#  model %>% fit(x_train, y_train, epochs=1, batch_size=batch_size, verbose=1, shuffle=FALSE)
-#  model %>% reset_states()
-#}
+
 trained_model <- model %>% fit(
     x = x_train, # sequence we're using for prediction 
     y = y_train, # sequence we're predicting
@@ -153,16 +150,17 @@ L = length(x_test)
 scaler = Scaled$scaler
 predictions = numeric(L)
 
-for(i in 1:L){
-     X = x_test[i]
-     dim(X) = c(1,1,1)
-     yhat = model %>% predict(X, batch_size=batch_size)
-     # invert scaling
-     yhat = invert_scaling(yhat, scaler,  c(-1, 1))
-     # invert difference
-     yhat = yhat + bitcoin_matrix[(n+i)]
-     # store
-     predictions[i] <- yhat
+for(i in 1:L) {
+  X = x_test[i]
+  dim(X) = c(1, 1, 1)
+  X
+  yhat = model %>% predict(X, batch_size = batch_size)
+  # invert scaling
+  yhat = invert_scaling(yhat, scaler,  c(-1, 1))
+  # invert difference
+  yhat = yhat + bitcoin_matrix[(n + i)]
+  # store
+  predictions[i] <- yhat
 }
 ```
 
