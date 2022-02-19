@@ -1,0 +1,44 @@
+---
+title: "MCM_2022"
+author: "MCM2022"
+date: "2/17/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(keras)
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(lubridate)
+#install_keras()
+
+theme_set(theme_minimal())
+
+set.seed(123)
+```
+
+```{r}
+# Load the data & clean the data
+bitcoin_data <- read.csv("data/BCHAIN-MKPRU.csv") %>% 
+  mutate(Date = as.Date(Date, "%m/%d/%y")) %>% 
+  na.omit()
+gold_data <- read.csv("data/LBMA-GOLD.csv") %>% 
+  mutate(Date = as.Date(Date, "%m/%d/%y")) %>% 
+  na.omit()
+```
+
+```{r}
+# Normalize the data
+bitcoin_max <- max(bitcoin_data$Value)
+bitcoin_min <- min(bitcoin_data$Value)
+bitcoin_spread <- bitcoin_max - bitcoin_min
+
+bitcoin_data <- (bitcoin_data$Value - bitcoin_min) / bitcoin_spread
+```
+
+
