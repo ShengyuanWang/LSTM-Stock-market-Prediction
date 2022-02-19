@@ -24,235 +24,113 @@ set.seed(123)
 
 ```{r}
 # Load the data & clean the data
-bitcoin_data <- read.csv("data/BCHAIN-MKPRU.csv") %>% 
-  mutate(Date = as.Date(Date, "%m/%d/%y")) %>% 
+bitcoin_data <- read.csv("data/BCHAIN-MKPRU.csv") %>%
+  mutate(Date = as.Date(Date, "%m/%d/%y")) %>%
+  na.omit()
+gold_data <- read.csv("data/LBMA-GOLD.csv") %>%
+  mutate(Date = as.Date(Date, "%m/%d/%y")) %>%
   na.omit()
 
-gold_data <- read.csv("data/LBMA-GOLD.csv") %>% 
-  mutate(Date = as.Date(Date, "%m/%d/%y")) %>% 
-  na.omit()
+lstm_model <- readRDS("lstm_model.rds")
 ```
 
 ```{r}
-max_value <- max(bitcoin_data$Value)
-min_value <- min(bitcoin_data$Value)
-spread <- max_value - min_value
- 
-dataset <- (bitcoin_data$Value - min_value) / spread
- 
-create_dataset <- function(dataset,
-                           look_back = 1)
+makeReadable <- function(numList, look_back)
 {
-    l <- length(dataset)
-    dataX <- array(dim = c(l - look_back, look_back))
- 
-    for (i in 1:ncol(dataX))
-    {
-        dataX[, i] <- dataset[i:(l - look_back + i - 1)]
-    }
- 
-    dataY <- array(
-        data = dataset[(look_back + 1):l],
-        dim = c(l - look_back, 1))
- 
-    return(
-        list(
-            dataX = dataX,
-            dataY = dataY))
+  max_value <- max(numList)
+  min_value <- min(numList)
+  spread <- max_value - min_value
+  dataset <- (numList - min_value) / spread
+  l <- length(dataset)
+  dataX <- array(dim = c(l - look_back, look_back))
+  
+  for (i in 1:ncol(dataX))
+  {
+    dataX[, i] <- dataset[i:(l - look_back + i - 1)]
+  }
+  
+  dataY <- array(data = dataset[(look_back + 1):l],
+                 dim = c(l - look_back, 1))
+  
+  return(list(dataX = dataX,
+              dataY = dataY))
 }
- 
-train_size <- as.integer(length(dataset) * 0.67)
-test_size <- length(dataset) - train_size
- 
-train <- dataset[1:train_size]
-test <- dataset[(train_size + 1):length(dataset)]
- 
-cat(length(train), length(test))
+
 ```
 
 ```{r}
-look_back <- 1
-trainXY <- create_dataset(train, look_back)
-testXY <-  create_dataset(test, look_back)
- 
-dim_train <- dim(trainXY$dataX)
-dim_test <- dim(testXY$dataX)
- 
-# reshape input to be [samples, time steps, features]
-dim(trainXY$dataX) <- c(dim_train[1], 1, dim_train[2])
-dim(testXY$dataX) <- c(dim_test[1], 1, dim_test[2])
+trainXY <- makeReadable(gold_data$USD..PM., 5)
 ```
 
 ```{r}
-model <- keras_model_sequential()
- 
-trained_model <- model %>%
-    layer_lstm(
-        units = 4,
-        input_shape = c(1, look_back)) %>%
-    layer_dense(
-        units = 1) %>%
-    compile(loss = 'mean_squared_error',
-            optimizer = 'adam') %>%
-    fit(trainXY$dataX,
-        trainXY$dataY,
-        epochs = 10,
-        batch_size = 1,
-        verbose = 2)
+# Fit the model to get predicted value
+trainPredict <- lstm_model %>%
+  predict(trainXY$dataX,
+          verbose = 1)
+testPredict <- lstm_model %>%
+  predict(testXY$dataX,
+          verbose = 1)
 
-sprintf(
-    'Train Score: %.4f MSE (%.4f RMSE)',
-    trainScore * spread^2,
-    sqrt(trainScore) * spread)
- 
-sprintf(
-    'Test Score: %.4f MSE (%.4f RMSE)',
-    testScore * spread^2,
-    sqrt(testScore) * spread)
-
-trainPredict <- model %>%
-    predict(
-        trainXY$dataX,
-        verbose = 2)
-testPredict <- model %>%
-    predict(
-        testXY$dataX,
-        verbose = 2)
- 
 trainPredict <- trainPredict * spread + min_value
 testPredict <- testPredict * spread + min_value
- 
-df <- data.frame(
-    index = 1:length(dataset),
-    value = dataset * spread + min_value,
-    type = 'raw') %>%
-    rbind(
-        data.frame(
-            index = 1:length(trainPredict) + look_back,
-            value = trainPredict,
-            type = 'train')) %>%
-    rbind(
-        data.frame(
-            index = 1:length(testPredict) + look_back + length(train),
-            value = testPredict,
-            type = 'test'))
- 
-ggplot(data = df) +
-    geom_line(
-        mapping = aes(
-            x = index,
-            y = value,
-            color = type)) +
-    geom_point(
-        mapping = aes(
-            x = index,
-            y = value,
-            color = type,
-            alpha = 0.5)) +
-    geom_vline(
-        xintercept = length(train) + 0.5) +
-    theme_minimal()
 ```
-
-______________
 
 ```{r}
-set.seed(123)
-look_back <- 12
-trainXY <- create_dataset(train, look_back)
-testXY <-  create_dataset(test, look_back)
- 
-dim_train <- dim(trainXY$dataX)
-dim_test <- dim(testXY$dataX)
- 
-# reshape input to be [samples, time steps, features]
-dim(trainXY$dataX) <- c(dim_train[1], 1, dim_train[2])
-dim(testXY$dataX) <- c(dim_test[1], 1, dim_test[2])
- 
-model <- keras_model_sequential()
- 
-model %>%
-    layer_lstm(
-        units = 4,
-        input_shape = c(1, look_back)) %>%
-    layer_dense(
-        units = 1) %>%
-    compile(
-        loss = 'mean_squared_error',
-        optimizer = 'adam') %>%
-    fit(trainXY$dataX,
-        trainXY$dataY,
-        epochs = 20,
-        batch_size = 1,
-        verbose = 2)
- 
-trainScore <- model %>%
-    evaluate(
-        trainXY$dataX,
-        trainXY$dataY,
-        verbose = 2)
- 
-testScore <- model %>%
-    evaluate(
-        testXY$dataX,
-        testXY$dataY,
-        verbose = 2)
- 
-sprintf(
-    'Train Score: %.4f MSE (%.4f RMSE)',
-    trainScore * spread^2,
-    sqrt(trainScore) * spread)
- 
-sprintf(
-    'Test Score: %.4f MSE (%.4f RMSE)',
-    testScore * spread^2,
-    sqrt(testScore) * spread)
- 
-trainPredict <- model %>%
-    predict(
-        trainXY$dataX,
-        verbose = 2)
-testPredict <- model %>%
-    predict(
-        testXY$dataX,
-        verbose = 2)
- 
-trainPredict <- trainPredict * spread + min_value
-testPredict <- testPredict * spread + min_value
- 
+# Plot the output
 df <- data.frame(
-    index = 1:length(dataset),
-    value = dataset * spread + min_value,
-    type = 'raw') %>%
-    rbind(
-        data.frame(
-            index = 1:length(trainPredict) + look_back,
-            value = trainPredict,
-            type = 'train')) %>%
-    rbind(
-        data.frame(
-            index = 1:length(testPredict) + look_back + length(train),
-            value = testPredict,
-            type = 'test'))
- 
+  index = 1:length(dataset),
+  value = dataset * spread + min_value,
+  type = 'raw'
+) %>%
+  rbind(data.frame(
+    index = 1:length(trainPredict) + look_back,
+    value = trainPredict,
+    type = 'train'
+  )) %>%
+  rbind(data.frame(
+    index = 1:length(testPredict) + look_back + length(train),
+    value = testPredict,
+    type = 'test'
+  ))
+
 ggplot(data = df) +
-    geom_line(
-        mapping = aes(
-            x = index,
-            y = value,
-            color = type)) +
-    geom_point(
-        mapping = aes(
-            x = index,
-            y = value,
-            color = type,
-            alpha = 0.5)) +
-    geom_vline(
-        xintercept = length(train) + 0.5) +
-    theme_minimal()
+  geom_line(mapping = aes(x = index,
+                          y = value,
+                          color = type)) +
+  geom_vline(xintercept = length(train) + 0.5) +
+  theme_minimal()
+```
+
+```{r}
+# Save the model
+saveRDS(trained_model, "LSTM_model.dep")
 ```
 
 
 
+```{r}
+trainPredict <- model %>%
+  predict(trainXY$dataX)
+testPredict <- model %>%
+  predict(testXY$dataX)
+
+trainPredict <- trainPredict * spread + min_value
+testPredict <- testPredict * spread + min_value
+```
+
+```{r}
+
+
+
+df1 <- df %>% 
+  filter(index >= 0,
+         index < 8) 
+
+ggplot(data = df1) +
+  geom_line(mapping = aes(x = index,
+                          y = value,
+                          color = type)) +
+  theme_minimal()
+```
 
 
