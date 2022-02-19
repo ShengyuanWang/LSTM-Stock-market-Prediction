@@ -150,34 +150,7 @@ ggplot(data = df) +
 
 ```{r}
 # Save the model
-saveRDS(trained_model, "LSTM_model.dep")
+#model %>% save_model_tf("model")
+#list.files("model")
 ```
-
-
-
-```{r}
-trainPredict <- model %>%
-  predict(trainXY$dataX)
-testPredict <- model %>%
-  predict(testXY$dataX)
-
-trainPredict <- trainPredict * spread + min_value
-testPredict <- testPredict * spread + min_value
-```
-
-```{r}
-
-
-
-df1 <- df %>% 
-  filter(index >= 0,
-         index < 8) 
-
-ggplot(data = df1) +
-  geom_line(mapping = aes(x = index,
-                          y = value,
-                          color = type)) +
-  theme_minimal()
-```
-
 
