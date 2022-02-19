@@ -149,8 +149,44 @@ ggplot(data = df) +
 ```
 
 ```{r}
-# Save the model
-#model %>% save_model_tf("model")
-#list.files("model")
+df %>% 
+  filter(index >= 1460,
+         index <= 1467) %>% 
+  ggplot(aes(x = index,
+             y = value,
+             color = type)) +
+  geom_line()
+  
+```
+
+
+```{r}
+# Save the predicted numbers
+
+index <- c(1,2,3,4,5)
+
+value <- c(0,0,0,0,0)
+
+empty_data_1 <- cbind(index,value)
+
+index <- c(1822,1823,1824,1825,1826)
+
+empty_data_2 <- cbind(index,value)
+
+result <- df %>% 
+  filter(type %in% c("test", "train")) %>% 
+  select(index, value) %>% 
+  rbind(empty_data_1) %>% 
+  mutate(index = ifelse(index >= 1460, index - 5, index)) %>% 
+  rbind(empty_data_2) %>% 
+  arrange(index)
+
+bitcoin_result <- bitcoin_data %>% 
+  cbind(result) %>% 
+  select(Date, value)
+
+bitcoin_result
+
+write.csv(bitcoin_result, "prediction/bitcoin_LSTM_result.csv")
 ```
 
