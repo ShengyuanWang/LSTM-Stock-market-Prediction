@@ -63,7 +63,7 @@ create_dataset <- function(dataset,
 
 ```{r}
 # Set the size of train and test dataset
-train_size <- as.integer(length(dataset) * 0.67)
+train_size <- as.integer(length(dataset) * 0.8)
 test_size <- length(dataset) - train_size
 ```
 
@@ -100,20 +100,23 @@ trained_model <- model %>%
   fit(
     trainXY$dataX,
     trainXY$dataY,
-    epochs = 10,
-    batch_size = 1,
-    verbose = 2
+    epochs = 15,
+    batch_size = 73,
+    verbose = 1,
+    validation_split = 0.25
   )
+
+plot(trained_model)
 ```
 
 ```{r}
 # Fit the model to get predicted value
 trainPredict <- model %>%
   predict(trainXY$dataX,
-          verbose = 2)
+          verbose = 1)
 testPredict <- model %>%
   predict(testXY$dataX,
-          verbose = 2)
+          verbose = 1)
 
 trainPredict <- trainPredict * spread + min_value
 testPredict <- testPredict * spread + min_value
@@ -141,12 +144,6 @@ ggplot(data = df) +
   geom_line(mapping = aes(x = index,
                           y = value,
                           color = type)) +
-  geom_point(mapping = aes(
-    x = index,
-    y = value,
-    color = type,
-    alpha = 0.5
-  )) +
   geom_vline(xintercept = length(train) + 0.5) +
   theme_minimal()
 ```
