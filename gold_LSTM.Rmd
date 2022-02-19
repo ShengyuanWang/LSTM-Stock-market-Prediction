@@ -184,7 +184,7 @@ result <- df %>%
   filter(type %in% c("test", "train")) %>% 
   select(index, value) %>% 
   rbind(empty_data_1) %>% 
-  mutate(index = ifelse(index >= 1004, index - 5, index)) %>% 
+  mutate(index = ifelse(index >= 1002, index - 5, index)) %>% 
   rbind(empty_data_2) %>% 
   arrange(index)
 
@@ -195,7 +195,7 @@ gold_result <- gold_data %>%
 
 gold_result
 
-write.csv(gold_result, "prediction/gold_LSTM_result_modified.csv")
+write.csv(gold_result, "prediction/gold_LSTM_result_modified.csv", row.names = FALSE)
 ```
 
 ```{r}
@@ -227,6 +227,6 @@ gold_result <- gold_data %>%
 
 gold_result
 
-write.csv(gold_result, "prediction/gold_LSTM_result.csv")
+write.csv(gold_result, "prediction/gold_LSTM_result.csv", row.names = FALSE)
 ```
 
