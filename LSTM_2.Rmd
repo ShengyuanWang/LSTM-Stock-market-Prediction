@@ -100,7 +100,7 @@ trained_model <- model %>%
   fit(
     trainXY$dataX,
     trainXY$dataY,
-    epochs = 15,
+    epochs = 20,
     batch_size = 73,
     verbose = 1,
     validation_split = 0.25
@@ -149,7 +149,7 @@ ggplot(data = df) +
 ```
 
 ```{r}
-testXY$dataX
+
 ```
 
 
