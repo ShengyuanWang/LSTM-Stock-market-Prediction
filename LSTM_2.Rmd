@@ -150,7 +150,7 @@ ggplot(data = df) +
 
 ```{r}
 # Save the model
-saveRDS(trained_model, "LSTM_model.rds")
+saveRDS(trained_model, "LSTM_model.dep")
 ```
 
 
