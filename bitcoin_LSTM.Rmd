@@ -18,16 +18,11 @@ library(lubridate)
 #install_keras()
 
 theme_set(theme_minimal())
-
-set.seed(123)
 ```
 
 ```{r}
 # Load the data & clean the data
 bitcoin_data <- read.csv("data/BCHAIN-MKPRU.csv") %>%
-  mutate(Date = as.Date(Date, "%m/%d/%y")) %>%
-  na.omit()
-gold_data <- read.csv("data/LBMA-GOLD.csv") %>%
   mutate(Date = as.Date(Date, "%m/%d/%y")) %>%
   na.omit()
 ```
@@ -37,7 +32,6 @@ gold_data <- read.csv("data/LBMA-GOLD.csv") %>%
 max_value <- max(bitcoin_data$Value)
 min_value <- min(bitcoin_data$Value)
 spread <- max_value - min_value
-
 dataset <- (bitcoin_data$Value - min_value) / spread
 ```
 
@@ -52,10 +46,8 @@ create_dataset <- function(dataset,
   {
     dataX[, i] <- dataset[i:(l - look_back + i - 1)]
   }
-  
   dataY <- array(data = dataset[(look_back + 1):l],
                  dim = c(l - look_back, 1))
-  
   return(list(dataX = dataX,
               dataY = dataY))
 }
@@ -100,7 +92,7 @@ trained_model <- model %>%
   fit(
     trainXY$dataX,
     trainXY$dataY,
-    epochs = 20,
+    epochs = 16,
     batch_size = 73,
     verbose = 1,
     validation_split = 0.25
@@ -150,8 +142,9 @@ ggplot(data = df) +
 
 ```{r}
 df %>% 
-  filter(index >= 1460,
-         index <= 1467) %>% 
+  mutate(index = ifelse(type %in% c("test", "train"), index - 1, index)) %>% 
+  filter(index >= 1500,
+         index <= 1550) %>% 
   ggplot(aes(x = index,
              y = value,
              color = type)) +
@@ -159,10 +152,41 @@ df %>%
   
 ```
 
+```{r}
+# Save the predicted numbers as X-1
+index <- c(1,2,3,4)
+
+value <- c(0,0,0,0)
+
+empty_data_1 <- cbind(index,value)
+
+index <- c(1821,1822,1823,1824,1825,1826)
+
+value <- c(0,0,0,0,0,0)
+
+empty_data_2 <- cbind(index,value)
+
+result <- df %>% 
+  mutate(index = ifelse(type %in% c("test", "train"), index - 1, index)) %>% 
+  filter(type %in% c("test", "train")) %>% 
+  select(index, value) %>% 
+  rbind(empty_data_1) %>% 
+  mutate(index = ifelse(index >= 1460, index - 5, index)) %>% 
+  rbind(empty_data_2) %>% 
+  arrange(index)
+
+bitcoin_result <- bitcoin_data %>% 
+  cbind(result) %>% 
+  select(Date, value)
+
+bitcoin_result
+
+write.csv(bitcoin_result, "prediction/bitcoin_LSTM_result_modified.csv")
+```
+
 
 ```{r}
-# Save the predicted numbers
-
+# Save the predicted numbers as X
 index <- c(1,2,3,4,5)
 
 value <- c(0,0,0,0,0)
