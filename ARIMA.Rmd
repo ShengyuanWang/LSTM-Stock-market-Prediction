@@ -1,0 +1,87 @@
+---
+title: "ARIMA"
+author: "MCM2022"
+date: "2/19/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(tseries)
+library(forecast)
+
+theme_set(theme_minimal())
+
+set.seed(123)
+```
+
+```{r}
+# Load the data & clean the data
+bitcoin_data <- read.csv("data/BCHAIN-MKPRU.csv") %>% 
+  mutate(Date = as.Date(Date, "%m/%d/%y")) %>% 
+  na.omit()
+
+gold_data <- read.csv("data/LBMA-GOLD.csv") %>% 
+  mutate(Date = as.Date(Date, "%m/%d/%y")) %>% 
+  na.omit()
+```
+
+```{r}
+# Visualize the data
+bitcoin_data %>% 
+  ggplot(aes(x = Date,
+             y = Value)) +
+  geom_line()
+```
+
+```{r}
+dataset = bitcoin_data$Value
+train_size <- as.integer(length(dataset) * 0.8)
+test_size <- length(dataset) - train_size
+train <- dataset[1:train_size]
+test <- dataset[(train_size + 1):length(dataset)]
+```
+
+```{r}
+# Visualize the time series
+plot(diff(log(train)),type='l', main='log returns plot')
+```
+
+```{r}
+# Dickey Fuller Test of Stationary
+adf.test(diff(log(train)), alternative="stationary", k=0)
+```
+
+```{r}
+# Using ACF and PACF to determine the parameters
+acf(diff(log(train)))
+pacf(diff(log(train)))
+```
+
+```{r}
+# Fit the ARIMA model; AIC lower, the model is better
+fit <- arima(diff(log(train)), c(1, 0, 1))
+```
+
+```{r}
+# To see which set of parameters is best for the model
+fitARIMA <- auto.arima(diff(log(train)), trace=TRUE)
+```
+
+```{r}
+plot(as.ts(diff(log(train))) )
+lines(fitted(fitARIMA), col="red")
+```
+
+```{r}
+futurVal <- forecast(fitARIMA,h=5, level=c(99)) #confidence level 99%
+plot(forecast(futurVal))
+```
+
+
+

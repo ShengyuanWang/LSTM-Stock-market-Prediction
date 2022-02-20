@@ -102,6 +102,31 @@ plot(trained_model)
 ```
 
 ```{r}
+# Print out the test score
+trainScore <- model %>%
+    evaluate(
+        trainXY$dataX,
+        trainXY$dataY,
+        verbose = 2)
+ 
+testScore <- model %>%
+    evaluate(
+        testXY$dataX,
+        testXY$dataY,
+        verbose = 2)
+ 
+sprintf(
+    'Train Score: %.4f MSE (%.4f RMSE)',
+    trainScore * spread^2,
+    sqrt(trainScore) * spread)
+ 
+sprintf(
+    'Test Score: %.4f MSE (%.4f RMSE)',
+    testScore * spread^2,
+    sqrt(testScore) * spread)
+```
+
+```{r}
 # Fit the model to get predicted value
 trainPredict <- model %>%
   predict(trainXY$dataX,
