@@ -94,7 +94,7 @@ model_arima <- function(result, listIn)
     train_data <- listIn[1:i]
     fitARIMA <- auto.arima(diff(log(train_data)), trace = FALSE)
     predARIMA <- forecast(fitARIMA, h = 1, level = c(99))
-    pred <- as.numeric(predARIMA$mean)
+    pred <- as.numeric(predARIMA$mean) * (10^5) / (10^5)
     new_value <- 2 ^ pred * listIn[i:i]
     temp = c(temp, new_value)
     print(i)
@@ -118,6 +118,8 @@ ggplot(data = bitcoin_result) +
                           y = value,
                           color = "blue")) +
   theme_minimal()
+
+bitcoin_result
 ```
 
 ```{r}
@@ -133,11 +135,15 @@ ggplot(data = bitcoin_test) +
                           y = value,
                           color = "blue")) +
   theme_minimal()
+
+bitcoin_result %>% 
+  mutate(dif = abs(Value - value))
 ```
 
 ```{r}
 bitcoin_final <- bitcoin_result %>% 
-  filter(Date > "2016-09-15")
+  filter(Date > "2016-09-15") %>% 
+  select(Date, value)
 
 write.csv(bitcoin_final, "prediction/bitcoin_ARIMA_result.csv", row.names = FALSE)
 ```

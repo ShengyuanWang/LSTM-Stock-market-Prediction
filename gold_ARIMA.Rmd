@@ -1,0 +1,101 @@
+---
+title: "gold_ARIMA"
+author: "MCM2022"
+date: "2/19/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(tseries)
+library(forecast)
+
+theme_set(theme_minimal())
+
+set.seed(123)
+```
+
+```{r}
+# Load the data & clean the data
+bitcoin_data <- read.csv("data/BCHAIN-MKPRU.csv") %>% 
+  mutate(Date = as.Date(Date, "%m/%d/%y")) %>% 
+  na.omit()
+
+gold_data <- read.csv("data/LBMA-GOLD.csv") %>% 
+  mutate(Date = as.Date(Date, "%m/%d/%y")) %>% 
+  na.omit()
+```
+
+```{r}
+value <- gold_data$USD..PM.[1:5]
+
+model_arima <- function(result, listIn)
+{
+  temp = result
+  for (i in 6:length(listIn))
+  {
+    train_data <- listIn[1:i]
+    fitARIMA <- auto.arima(diff(log(train_data)), trace = FALSE)
+    predARIMA <- forecast(fitARIMA, h = 1, level = c(99))
+    pred <- as.numeric(predARIMA$mean) * (10^5) / (10^5)
+    new_value <- 2 ^ pred * listIn[i:i]
+    temp = c(temp, new_value)
+    print(i)
+    print(new_value)
+  }
+  return(temp)
+}
+
+value <- model_arima(value, gold_data$USD..PM.)
+```
+
+```{r}
+gold_result <- gold_data %>% 
+  cbind(value)
+
+ggplot(data = gold_result) +
+  geom_line(mapping = aes(x = Date,
+                          y = USD..PM.,
+                          color = "red")) +
+  geom_line(mapping = aes(x = Date,
+                          y = value,
+                          color = "blue")) +
+  theme_minimal()
+
+bitcoin_result
+```
+
+```{r}
+gold_test <- gold_result %>% 
+  filter(Date >= "2017-12-20",
+         Date <= "2018-12-20")
+
+ggplot(data = gold_test) +
+  geom_line(mapping = aes(x = Date,
+                          y = USD..PM.,
+                          color = "red")) +
+  geom_line(mapping = aes(x = Date,
+                          y = value,
+                          color = "blue")) +
+  theme_minimal()
+
+gold_result %>% 
+  mutate(dif = abs(USD..PM. - value))
+```
+
+```{r}
+gold_final <- gold_result %>% 
+  filter(Date > "2016-09-15") %>% 
+  select(Date, value)
+
+write.csv(gold_final, "prediction/gold_ARIMA_result.csv", row.names = FALSE)
+```
+
+
+
+
