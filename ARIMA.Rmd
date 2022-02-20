@@ -79,9 +79,50 @@ lines(fitted(fitARIMA), col="red")
 ```
 
 ```{r}
-futurVal <- forecast(fitARIMA,h=5, level=c(99)) #confidence level 99%
+futurVal <- forecast(fitARIMA,h=1, level=c(99)) #confidence level 99%
 plot(forecast(futurVal))
 ```
+
+```{r}
+futurVal
+
+a = 1
+b = 1
+a <- a %>% 
+  append(b)
+```
+
+```{r}
+value = c()
+value <- bitcoin_data$Value[1:5]
+
+
+
+model_arima <- function(listIn)
+{
+  for (i in 6:length(listIn))
+  {
+    train_data <- listIn[1:i]
+    fitARIMA <- auto.arima(diff(log(train_data)), trace=FALSE)
+    predARIMA <- forecast(fitARIMA,h=1, level=c(99))
+    pred <- as.numeric(predARIMA$mean)
+    new_value <- 2^pred*listIn[i:i]
+    append(value, new_value, after = length(value))
+    print(i)
+    print(new_value)
+  }
+}
+
+model_arima(bitcoin_data$Value)
+```
+
+```{r}
+value
+```
+
+
+
+
 
 
 
