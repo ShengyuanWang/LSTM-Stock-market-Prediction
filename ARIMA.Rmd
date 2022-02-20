@@ -84,45 +84,62 @@ plot(forecast(futurVal))
 ```
 
 ```{r}
-futurVal
-
-a = 1
-b = 1
-a <- a %>% 
-  append(b)
-```
-
-```{r}
-value = c()
 value <- bitcoin_data$Value[1:5]
 
-
-
-model_arima <- function(listIn)
+model_arima <- function(result, listIn)
 {
+  temp = result
   for (i in 6:length(listIn))
   {
     train_data <- listIn[1:i]
-    fitARIMA <- auto.arima(diff(log(train_data)), trace=FALSE)
-    predARIMA <- forecast(fitARIMA,h=1, level=c(99))
+    fitARIMA <- auto.arima(diff(log(train_data)), trace = FALSE)
+    predARIMA <- forecast(fitARIMA, h = 1, level = c(99))
     pred <- as.numeric(predARIMA$mean)
-    new_value <- 2^pred*listIn[i:i]
-    append(value, new_value, after = length(value))
+    new_value <- 2 ^ pred * listIn[i:i]
+    temp = c(temp, new_value)
     print(i)
     print(new_value)
   }
+  return(temp)
 }
 
-model_arima(bitcoin_data$Value)
+value <- model_arima(value, bitcoin_data$Value)
 ```
 
 ```{r}
-value
+bitcoin_result <- bitcoin_data %>% 
+  cbind(value)
+
+ggplot(data = bitcoin_result) +
+  geom_line(mapping = aes(x = Date,
+                          y = Value,
+                          color = "red")) +
+  geom_line(mapping = aes(x = Date,
+                          y = value,
+                          color = "blue")) +
+  theme_minimal()
 ```
 
+```{r}
+bitcoin_test <- bitcoin_result %>% 
+  filter(Date >= "2017-11-20",
+         Date <= "2017-12-20")
 
+ggplot(data = bitcoin_test) +
+  geom_line(mapping = aes(x = Date,
+                          y = Value,
+                          color = "red")) +
+  geom_line(mapping = aes(x = Date,
+                          y = value,
+                          color = "blue")) +
+  theme_minimal()
+```
 
+```{r}
+bitcoin_final <- bitcoin_result %>% 
+  filter(Date > "2016-09-15")
 
-
+write.csv(bitcoin_final, "prediction/bitcoin_ARIMA_result.csv", row.names = FALSE)
+```
 
 

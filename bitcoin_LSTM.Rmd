@@ -179,7 +179,6 @@ df %>%
              y = value,
              color = type)) +
   geom_line()
-  
 ```
 
 ```{r}
