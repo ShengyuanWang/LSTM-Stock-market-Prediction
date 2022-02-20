@@ -89,21 +89,22 @@ value <- bitcoin_data$Value[1:5]
 model_arima <- function(result, listIn)
 {
   temp = result
-  for (i in 6:length(listIn))
+  for (i in 5:length(listIn))
   {
     train_data <- listIn[1:i]
     fitARIMA <- auto.arima(diff(log(train_data)), trace = FALSE)
     predARIMA <- forecast(fitARIMA, h = 1, level = c(99))
-    pred <- as.numeric(predARIMA$mean) * (10^5) / (10^5)
+    pred <- as.numeric(predARIMA$mean)
     new_value <- 2 ^ pred * listIn[i:i]
     temp = c(temp, new_value)
-    print(i)
+    print(i+1)
     print(new_value)
   }
   return(temp)
 }
 
 value <- model_arima(value, bitcoin_data$Value)
+value <- value[1:length(value) - 1]
 ```
 
 ```{r}
