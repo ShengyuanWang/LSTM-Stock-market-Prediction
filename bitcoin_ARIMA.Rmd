@@ -32,55 +32,96 @@ gold_data <- read.csv("data/LBMA-GOLD.csv") %>%
 ```
 
 ```{r}
-# Visualize the data
-bitcoin_data %>% 
-  ggplot(aes(x = Date,
-             y = Value)) +
-  geom_line()
-```
-
-```{r}
 dataset = bitcoin_data$Value
 train_size <- as.integer(length(dataset) * 0.8)
 test_size <- length(dataset) - train_size
 train <- dataset[1:train_size]
 test <- dataset[(train_size + 1):length(dataset)]
+
+bitcoin_new <- bitcoin_data %>% 
+  mutate(Type = ifelse(Date < "2020-09-09", "train", "test"))
 ```
 
 ```{r}
-# Visualize the time series
-plot(diff(log(train)),type='l', main='log returns plot')
+fitARIMA <- auto.arima(train, trace = FALSE)
+predARIMA <- forecast(fitARIMA, h = 366, level = c(99))
+validation <- as.numeric(predARIMA$mean)
+
+bitcoin_validation <- bitcoin_new %>% 
+  filter(Date > "2020-09-09") %>% 
+  mutate(Value = validation,
+         Type = "validation")
+
+bitcoin_arima <- bitcoin_new %>% 
+  rbind(bitcoin_validation)
+
+bitcoin_arima %>% 
+  ggplot(aes(x = Date, 
+             y = Value, 
+             color = Type)) +
+  geom_line()
+
+normal_val <- validation
 ```
 
 ```{r}
-# Dickey Fuller Test of Stationary
-adf.test(diff(log(train)), alternative="stationary", k=0)
+fitARIMA <- auto.arima(log(train), trace = FALSE)
+predARIMA <- forecast(fitARIMA, h = 366, level = c(99))
+validation <- as.numeric(predARIMA$mean)
+
+bitcoin_validation <- bitcoin_new %>% 
+  filter(Date > "2020-09-09") %>% 
+  mutate(Value = exp(validation),
+         Type = "validation")
+
+bitcoin_arima <- bitcoin_new %>% 
+  rbind(bitcoin_validation)
+
+bitcoin_arima %>% 
+  ggplot(aes(x = Date, 
+             y = Value, 
+             color = Type)) +
+  geom_line()
+
+log_val <- exp(validation)
 ```
 
 ```{r}
-# Using ACF and PACF to determine the parameters
-acf(diff(log(train)))
-pacf(diff(log(train)))
+fitARIMA <- auto.arima(diff(log(train)), trace = FALSE)
+predARIMA <- forecast(fitARIMA, h = 366, level = c(99))
+validation_dif <- as.numeric(predARIMA$mean)
+
+validation <- c()
+preNum <- train[length(train):length(train)]
+
+for (i in 1:length(validation_dif))
+{
+  nextInput <- exp(validation_dif[i:i])*preNum
+  validation <- c(validation, nextInput)
+  preNum <- nextInput
+}
+
+bitcoin_validation <- bitcoin_new %>% 
+  filter(Date > "2020-09-09") %>% 
+  mutate(Value = validation,
+         Type = "validation")
+
+bitcoin_arima <- bitcoin_new %>% 
+  rbind(bitcoin_validation)
+
+bitcoin_arima %>% 
+  ggplot(aes(x = Date, 
+             y = Value, 
+             color = Type)) +
+  geom_line()
+
+diff_log_val <- validation
 ```
 
 ```{r}
-# Fit the ARIMA model; AIC lower, the model is better
-fit <- arima(diff(log(train)), c(1, 0, 1))
-```
-
-```{r}
-# To see which set of parameters is best for the model
-fitARIMA <- auto.arima(diff(log(train)), trace=TRUE)
-```
-
-```{r}
-plot(as.ts(diff(log(train))) )
-lines(fitted(fitARIMA), col="red")
-```
-
-```{r}
-futurVal <- forecast(fitARIMA,h=1, level=c(99)) #confidence level 99%
-plot(forecast(futurVal))
+head(normal_val)
+head(log_val)
+head(diff_log_val)
 ```
 
 ```{r}
