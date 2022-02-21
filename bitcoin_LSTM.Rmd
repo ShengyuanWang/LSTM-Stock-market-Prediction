@@ -92,8 +92,8 @@ trained_model <- model %>%
   fit(
     trainXY$dataX,
     trainXY$dataY,
-    epochs = 15,
-    batch_size = 73,
+    epochs = 20,
+    batch_size = 97,
     verbose = 1,
     validation_split = 0.25
   )
@@ -172,7 +172,6 @@ ggplot(data = df) +
 
 ```{r}
 df %>% 
-  mutate(index = ifelse(type %in% c("test", "train"), index - 2, index)) %>%
   filter(index >= 1500,
          index <= 1550) %>% 
   ggplot(aes(x = index,
