@@ -112,7 +112,7 @@ plot(trained_model)
 
 ```{r}
 # Print out the test score
-model <- load_model_tf("model/LSTM_bitcoin")
+#model <- load_model_tf("model/LSTM_bitcoin")
 
 trainScore <- model %>%
     evaluate(

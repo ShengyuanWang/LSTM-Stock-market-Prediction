@@ -154,6 +154,7 @@ diff_log_val <- validation
 checkresiduals(fitARIMA)
 ```
 
+
 ```{r}
 # Save the result of ARIMA
 saveRDS(diff_log_val, file = "DataPrediction/Output/ARIMA/bitcoin_ARIMA.RData")

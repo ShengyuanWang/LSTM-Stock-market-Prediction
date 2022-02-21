@@ -17,7 +17,7 @@ library(ggthemes)
 library(lubridate)
 #install_keras()
 
-theme_set(theme_minimal())
+theme_set(theme_bw())
 
 set.seed(123)
 ```
@@ -31,6 +31,14 @@ gold_data <- read.csv("data/LBMA-GOLD.csv") %>%
   mutate(Date = as.Date(Date, "%m/%d/%y")) %>%
   na.omit()
 ```
+
+```{r}
+# Set colors
+DB <- rgb(29/255, 59/255, 83/255)
+B <- rgb(69/255, 147/255, 182/255)
+O <- rgb(225/255, 116/255, 56/255)
+```
+
 
 ```{r}
 # Normalize the whole dataset
@@ -110,6 +118,7 @@ plot(trained_model)
 ```
 
 ```{r}
+model <- load_model_tf("model/LSTM_gold")
 # Print out the test score
 trainScore <- model %>%
     evaluate(
@@ -170,7 +179,7 @@ ggplot(data = df) +
                           y = value,
                           color = type)) +
   geom_vline(xintercept = length(train) + 0.5) +
-  theme_minimal()
+  scale_color_manual(values = c(DB, O, B))
 ```
 
 ```{r}
