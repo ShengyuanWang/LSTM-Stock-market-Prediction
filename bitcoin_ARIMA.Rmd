@@ -32,39 +32,67 @@ gold_data <- read.csv("data/LBMA-GOLD.csv") %>%
 ```
 
 ```{r}
+# Set colors
+DB <- rgb(29/255, 59/255, 83/255)
+B <- rgb(69/255, 147/255, 182/255)
+O <- rgb(225/255, 116/255, 56/255)
+```
+
+```{r}
+# Divide the data into train group and test group
 dataset = bitcoin_data$Value
 train_size <- as.integer(length(dataset) * 0.8)
 test_size <- length(dataset) - train_size
 train <- dataset[1:train_size]
 test <- dataset[(train_size + 1):length(dataset)]
 
+# Give the type name of the data
 bitcoin_new <- bitcoin_data %>% 
   mutate(Type = ifelse(Date < "2020-09-09", "train", "test"))
 ```
 
 ```{r}
+# Quick plot data & diff(log(data))
+plot(train, type = "l", col = DB)
+plot(diff(log(train)),type='l', col = DB)
+```
+
+```{r}
+# Check the Dickey-Fuller test
+adf.test(diff(log(train)), alternative = "stationary", k = 0)
+```
+
+```{r}
+# Use ACF and PACF to determine parameters
+acf(diff(log(train)), col = DB)
+pacf(diff(log(train)), col = DB)
+```
+
+```{r, eval = FALSE}
+# Graph ARIMA model with train
 fitARIMA <- auto.arima(train, trace = FALSE)
 predARIMA <- forecast(fitARIMA, h = 366, level = c(99))
 validation <- as.numeric(predARIMA$mean)
 
-bitcoin_validation <- bitcoin_new %>% 
-  filter(Date > "2020-09-09") %>% 
+bitcoin_validation <- bitcoin_new %>%
+  filter(Date > "2020-09-09") %>%
   mutate(Value = validation,
          Type = "validation")
 
-bitcoin_arima <- bitcoin_new %>% 
+bitcoin_arima <- bitcoin_new %>%
   rbind(bitcoin_validation)
 
-bitcoin_arima %>% 
-  ggplot(aes(x = Date, 
-             y = Value, 
+bitcoin_arima %>%
+  ggplot(aes(x = Date,
+             y = Value,
              color = Type)) +
   geom_line()
 
 normal_val <- validation
 ```
 
-```{r}
+```{r, eval = FALSE}
+# Graph ARIMA model with log(train)
 fitARIMA <- auto.arima(log(train), trace = FALSE)
 predARIMA <- forecast(fitARIMA, h = 366, level = c(99))
 validation <- as.numeric(predARIMA$mean)
@@ -87,6 +115,7 @@ log_val <- exp(validation)
 ```
 
 ```{r}
+# Graph ARIMA model with diff(log(train))
 fitARIMA <- auto.arima(diff(log(train)), trace = FALSE)
 predARIMA <- forecast(fitARIMA, h = 366, level = c(99))
 validation_dif <- as.numeric(predARIMA$mean)
@@ -104,7 +133,7 @@ for (i in 1:length(validation_dif))
 bitcoin_validation <- bitcoin_new %>% 
   filter(Date > "2020-09-09") %>% 
   mutate(Value = validation,
-         Type = "validation")
+         Type = "predict")
 
 bitcoin_arima <- bitcoin_new %>% 
   rbind(bitcoin_validation)
@@ -113,18 +142,25 @@ bitcoin_arima %>%
   ggplot(aes(x = Date, 
              y = Value, 
              color = Type)) +
-  geom_line()
+  geom_line() +
+  scale_color_manual(values = c(O, B, DB)) +
+  theme_bw()
 
 diff_log_val <- validation
 ```
 
 ```{r}
-head(normal_val)
-head(log_val)
-head(diff_log_val)
+# Check the model
+checkresiduals(fitARIMA)
 ```
 
 ```{r}
+# Save the result of ARIMA
+saveRDS(diff_log_val, file = "DataPrediction/Output/ARIMA/bitcoin_ARIMA.RData")
+```
+
+```{r, eval = FALSE}
+# Dynamic ARIMA
 value <- bitcoin_data$Value[1:5]
 
 model_arima <- function(result, listIn)
@@ -148,46 +184,51 @@ value <- model_arima(value, bitcoin_data$Value)
 value <- value[1:length(value) - 1]
 ```
 
-```{r}
-bitcoin_result <- bitcoin_data %>% 
-  cbind(value)
+```{r, eval = FALSE}
+# Visualize the result of dynamic ARIMA
+bitcoin_predict <- bitcoin_data %>% 
+  cbind(value) %>% 
+  select(Date, value) %>% 
+  mutate(Value = value) %>% 
+  select(Date, Value) %>% 
+  cbind(Type = "predict")
 
-ggplot(data = bitcoin_result) +
+bitcoin_1 <- bitcoin_data %>% 
+  mutate(Type = "raw") %>% 
+  rbind(bitcoin_predict)
+
+ggplot(data = bitcoin_1) +
   geom_line(mapping = aes(x = Date,
                           y = Value,
-                          color = "red")) +
-  geom_line(mapping = aes(x = Date,
-                          y = value,
-                          color = "blue")) +
-  theme_minimal()
+                          color = Type)) +
+  theme_bw() +
+  scale_color_manual(values = c(O, DB))
 
 bitcoin_result
 ```
 
-```{r}
-bitcoin_test <- bitcoin_result %>% 
+```{r, eval = FALSE}
+# Visualize part of the result of dynamic ARIMA
+bitcoin_test <- bitcoin_1 %>% 
   filter(Date >= "2017-11-20",
          Date <= "2017-12-20")
 
 ggplot(data = bitcoin_test) +
   geom_line(mapping = aes(x = Date,
                           y = Value,
-                          color = "red")) +
-  geom_line(mapping = aes(x = Date,
-                          y = value,
-                          color = "blue")) +
-  theme_minimal()
+                          color = Type)) +
+  theme_bw() +
+  scale_color_manual(values = c(O, DB))
 
 bitcoin_result %>% 
   mutate(dif = abs(Value - value))
 ```
 
-```{r}
+```{r, eval = FALSE}
+# Save the result of dynamic ARIMA
 bitcoin_final <- bitcoin_result %>% 
   filter(Date > "2016-09-15") %>% 
   select(Date, value)
 
-write.csv(bitcoin_final, "prediction/bitcoin_ARIMA_result.csv", row.names = FALSE)
+write.csv(bitcoin_final, "prediction/bitcoin_dynamicARIMA_result.csv", row.names = FALSE)
 ```
-
-
