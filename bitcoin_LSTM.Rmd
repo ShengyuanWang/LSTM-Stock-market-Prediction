@@ -135,6 +135,8 @@ sprintf(
     'Test Score: %.4f MSE (%.4f RMSE)',
     testScore * spread^2,
     sqrt(testScore) * spread)
+
+model.
 ```
 
 ```{r}
@@ -224,7 +226,6 @@ bitcoin_result
 
 write.csv(bitcoin_result, "prediction/bitcoin_LSTM_result_modified.csv", row.names = FALSE)
 ```
-
 
 ```{r}
 # Save the predicted numbers as X
